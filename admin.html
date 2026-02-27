@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background: #020617; color: white; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #0f172a; }
+        th, td { border: 1px solid #334155; padding: 12px; text-align: left; }
+        th { background: #1e293b; color: #0ea5e9; }
+        .btn-del { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Order Management Panel</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th><th>Name</th><th>Model</th><th>IMEI</th><th>Price</th><th>Pay</th><th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+    </table>
+
+    <script>
+        function render() {
+            let list = JSON.parse(localStorage.getItem("orders") || "[]");
+            let r = document.getElementById("rows");
+            r.innerHTML = "";
+            list.reverse().forEach((o, index) => {
+                let tr = document.createElement("tr");
+                tr.innerHTML = `<td>${o.date}</td><td>${o.name}</td><td>${o.model}</td><td>${o.imei}</td><td>${o.price}</td><td>${o.pay}</td>
+                <td><button class="btn-del" onclick="delOrder(${index})">Delete</button></td>`;
+                r.appendChild(tr);
+            });
+        }
+
+        function delOrder(index) {
+            if(confirm("Delete လုပ်မှာ သေချာပါသလား?")) {
+                let list = JSON.parse(localStorage.getItem("orders") || "[]").reverse();
+                list.splice(index, 1);
+                localStorage.setItem("orders", JSON.stringify(list.reverse()));
+                render();
+            }
+        }
+        render();
+    </script>
+</body>
+</html>

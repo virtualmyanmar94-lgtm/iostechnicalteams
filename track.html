@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Track Your Order</title>
+    <style>
+        body { font-family: sans-serif; background: #020617; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #0f172a; padding: 30px; border-radius: 12px; width: 320px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #0ea5e9; border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #res { margin-top: 20px; padding: 10px; border-radius: 8px; background: #1e293b; display: none; text-align: left; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3>Track Order</h3>
+        <input id="imeiSearch" placeholder="Enter IMEI / Serial">
+        <button onclick="track()">Search</button>
+        <div id="res"></div>
+    </div>
+
+    <script>
+        function track() {
+            let imei = document.getElementById("imeiSearch").value;
+            let list = JSON.parse(localStorage.getItem("orders") || "[]");
+            let o = list.find(x => x.imei === imei);
+            let res = document.getElementById("res");
+            res.style.display = "block";
+            if(o) {
+                res.innerHTML = `<span style="color:#22c55e">● Order Found</span><br>Name: ${o.name}<br>Model: ${o.model}<br>Status: Processing`;
+            } else {
+                res.innerHTML = `<span style="color:#ef4444">Not Found</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Myanmar iOS Technology</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { --primary: #0ea5e9; --success: #22c55e; --bg: #020617; }
+        body { font-family: 'Segoe UI', Arial; background: linear-gradient(135deg, #020617, #0f172a); color: white; display: flex; justify-content: center; padding: 20px; min-height: 100vh; }
+        .card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(15px); padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; border: 1px solid #334155; }
+        h3 { text-align: center; color: var(--primary); margin-bottom: 20px; }
+        label { font-size: 14px; color: #94a3b8; display: block; margin-top: 10px; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        .price { margin-top: 15px; padding: 15px; background: var(--primary); border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem; }
+        .pay { display: flex; gap: 10px; margin-top: 15px; }
+        .pay div { flex: 1; border: 2px solid #334155; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .pay div.active { border-color: var(--success); background: #064e3b; }
+        .qr { display: none; text-align: center; margin-top: 15px; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        button { width: 100%; padding: 14px; margin-top: 20px; border: none; border-radius: 8px; background: var(--success); color: white; font-weight: bold; cursor: pointer; }
+        button:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h3>Myanmar iOS Technology</h3>
+
+    <label>Name</label><input id="name" placeholder="အမည် ဖြည့်ပါ">
+    <label>Phone</label><input id="phone" placeholder="ဆက်သွယ်ရန် ဖုန်း">
+
+    <label>Device</label>
+    <select id="device" onchange="loadModels()">
+        <option value="iPhone">iPhone</option>
+        <option value="iPad">iPad</option>
+    </select>
+
+    <label>Model</label>
+    <select id="model" onchange="updatePrice()"></select>
+
+    <label>IMEI / Serial Number</label>
+    <input id="imei" placeholder="15 Digit IMEI">
+
+    <label>Select Payment</label>
+    <div class="pay">
+        <div onclick="paySel('KBZ', this)">KBZ Pay</div>
+        <div onclick="paySel('Wave', this)">Wave Pay</div>
+    </div>
+
+    <div id="qrKBZ" class="qr">
+        <img src="qr/kbz.png" width="150" alt="KBZ QR">
+        <div style="margin-top:5px">09962704447 (U Hla Hla)</div>
+    </div>
+    <div id="qrWave" class="qr">
+        <img src="qr/wave.png" width="150" alt="Wave QR">
+        <div style="margin-top:5px">09962704447 (U Hla Hla)</div>
+    </div>
+
+    <label>Payment Screenshot</label>
+    <input type="file" id="shot" accept="image/*">
+
+    <div id="price" class="price">Price: 0 MMK</div>
+
+    <button onclick="submitOrder()">Submit Order</button>
+</div>
+
+<script>
+const TOKEN = "8030400543:AAGSFTWM9R-isG-CL560MKt8jIAx3jrGZKI";
+const CHAT = "7067863176";
+
+const iphonePrices = {
+    "6s to 8 Plus": 85000, "X": 135000, "XS / XR / Max": 220000,
+    "11 / 12 Series": 300000, "13 / 14 Series": 400000, "15 / 16 Series": 550000
+};
+
+let selectedPay = "";
+
+function loadModels() {
+    const dsel = document.getElementById("device");
+    const msel = document.getElementById("model");
+    msel.innerHTML = "";
+    if(dsel.value === "iPhone") {
+        for(let m in iphonePrices) {
+            let o = document.createElement("option");
+            o.text = m; o.value = iphonePrices[m];
+            msel.add(o);
+        }
+    } else {
+        let o = document.createElement("option");
+        o.text = "Contact Admin for iPad"; o.value = "Contact";
+        msel.add(o);
+    }
+    updatePrice();
+}
+
+function updatePrice() {
+    const msel = document.getElementById("model");
+    const priceBox = document.getElementById("price");
+    priceBox.innerHTML = msel.value === "Contact" ? "Contact Admin" : `Price: ${msel.value} MMK`;
+}
+
+function paySel(p, el) {
+    selectedPay = p;
+    document.querySelectorAll(".pay div").forEach(x => x.classList.remove("active"));
+    el.classList.add("active");
+    document.getElementById("qrKBZ").style.display = p === "KBZ" ? "block" : "none";
+    document.getElementById("qrWave").style.display = p === "Wave" ? "block" : "none";
+}
+
+async function submitOrder() {
+    const name = document.getElementById("name").value;
+    const phone = document.getElementById("phone").value;
+    const imei = document.getElementById("imei").value;
+    const shot = document.getElementById("shot").files[0];
+    const modelText = document.getElementById("model").options[document.getElementById("model").selectedIndex].text;
+    const priceVal = document.getElementById("model").value;
+
+    if(!name || !phone || !imei || !selectedPay || !shot) {
+        alert("ကျေးဇူးပြု၍ အချက်အလက်အားလုံး ပြည့်စုံစွာဖြည့်သွင်းပါ။");
+        return;
+    }
+
+    const order = { name, phone, imei, device: document.getElementById("device").value, model: modelText, price: priceVal, pay: selectedPay, date: new Date().toLocaleString() };
+
+    // Save to LocalStorage
+    let list = JSON.parse(localStorage.getItem("orders") || "[]");
+    list.push(order);
+    localStorage.setItem("orders", JSON.stringify(list));
+
+    // Send to Telegram
+    await sendTelegramMsg(order);
+    await sendTelegramPhoto(shot, order);
+    await sendTelegramPDF(order);
+
+    alert("Order အောင်မြင်စွာ ပေးပို့ပြီးပါပြီ။");
+    location.reload();
+}
+
+function sendTelegramMsg(o) {
+    const text = `🔔 *New Order!*\n👤 Name: ${o.name}\n📞 Phone: ${o.phone}\n📱 Device: ${o.model}\n🔢 IMEI: ${o.imei}\n💰 Price: ${o.price}\n💳 Pay: ${o.pay}`;
+    return fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ chat_id: CHAT, text: text, parse_mode: "Markdown" })
+    });
+}
+
+function sendTelegramPhoto(file, o) {
+    let fd = new FormData();
+    fd.append("chat_id", CHAT);
+    fd.append("photo", file);
+    fd.append("caption", `Payment for ${o.name} (${o.imei})`);
+    return fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: "POST", body: fd });
+}
+
+function sendTelegramPDF(o) {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+    doc.setFontSize(20); doc.text("Myanmar iOS Technology", 20, 20);
+    doc.setFontSize(12); doc.text(`Invoice for: ${o.name}`, 20, 35);
+    doc.text(`Device: ${o.model}`, 20, 45);
+    doc.text(`IMEI: ${o.imei}`, 20, 55);
+    doc.text(`Amount: ${o.price} MMK`, 20, 65);
+    doc.text(`Date: ${o.date}`, 20, 75);
+    let blob = doc.output("blob");
+    let fd = new FormData();
+    fd.append("chat_id", CHAT);
+    fd.append("document", blob, `Invoice_${o.imei}.pdf`);
+    return fetch(`https://api.telegram.org/bot${TOKEN}/sendDocument`, { method: "POST", body: fd });
+}
+
+loadModels();
+</script>
+</body>
+</html>
